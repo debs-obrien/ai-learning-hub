@@ -2,7 +2,7 @@
 
 A beautiful, personal learning management app for organizing AI-related resources with a todo-style workflow.
 
-![AI Learning Hub Screenshot](./screenshots/main.png)
+> **Built with [Goose](https://github.com/block/goose) in under 30 minutes from a single prompt!** 🪿✨
 
 ## ✨ Features
 
