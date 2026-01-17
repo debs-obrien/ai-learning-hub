@@ -40,5 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# database
-/data/
+# database - commented out to allow syncing data via git
+# /data/
