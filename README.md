@@ -2,7 +2,7 @@
 
 A beautiful, personal learning management app for organizing AI-related resources with a todo-style workflow.
 
-> **Built with [Goose](https://github.com/block/goose) in under 30 minutes from a single prompt!** 🪿✨
+> **Built with [goose](https://github.com/block/goose) in under 30 minutes from a single prompt!** 🪿✨
 
 ## ✨ Features
 
