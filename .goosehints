@@ -1,0 +1,55 @@
+# AI Learning Hub - Goose Hints
+
+## Project Overview
+This is a personal learning management app for organizing AI-related resources with a todo-style workflow.
+
+## Database
+- SQLite database located at: `data/learning-hub.db`
+- Resources table schema: id, url, title, description, category, status, priority, notes, favicon, created_at, updated_at, completed_at
+- Categories: blog, video, podcast, course, paper, other
+- Status: to_learn, learning, completed
+
+## Adding URLs/Resources
+
+### Web Scraping Best Practices
+**IMPORTANT**: Use the Playwright MCP extension for web scraping instead of the basic web_scrape tool.
+
+Why Playwright is better:
+1. Can handle JavaScript-rendered content (SPAs, React apps)
+2. Can interact with cookie banners and popups
+3. Gets full page content after dynamic loading
+4. Can access metadata that requires page interaction
+
+### How to add URLs:
+1. Use `playwright__browser_navigate` to visit the URL
+2. Accept any cookie banners if needed with `playwright__browser_click`
+3. Use `playwright__browser_snapshot` to get page content
+4. Extract title and description from the page
+5. Insert into database with appropriate category:
+   - x.com/twitter.com → 'other' (usually requires auth, use placeholder)
+   - spotify.com/episode → 'podcast'
+   - youtube.com → 'video'
+   - engineering blogs, dev.to, medium → 'blog'
+   - coursera, udemy, etc → 'course'
+   - arxiv.org → 'paper'
+
+### SQLite Insert Example:
+```sql
+INSERT INTO resources (url, title, description, category, status, priority, created_at, updated_at) 
+VALUES (
+  'https://example.com/article',
+  'Article Title',
+  'Article description here',
+  'blog',
+  'to_learn',
+  (SELECT COALESCE(MAX(priority), -1) + 1 FROM resources),
+  strftime('%s', 'now'),
+  strftime('%s', 'now')
+);
+```
+
+### Notes:
+- X/Twitter posts require authentication - use placeholder descriptions
+- Spotify episodes can be scraped without login (accept cookies first)
+- Block engineering blog and most tech blogs work well with Playwright
+- Always close browser after scraping: `playwright__browser_close`
