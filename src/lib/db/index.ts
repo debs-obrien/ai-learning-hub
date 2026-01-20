@@ -23,6 +23,7 @@ export const db = new Proxy({} as ReturnType<typeof drizzle>, {
       const connectionString = getConnectionString();
       const client = postgres(connectionString, {
         prepare: false, // Required for Supabase Transaction Pooler
+        ssl: 'require', // Required for Supabase connections
       });
       _db = drizzle(client, { schema });
     }
