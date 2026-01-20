@@ -32,11 +32,23 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(filtered);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching resources:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
+    // Get detailed error info
+    let errorDetails = "Unknown error";
+    if (error instanceof Error) {
+      errorDetails = JSON.stringify({
+        message: error.message,
+        name: error.name,
+        stack: error.stack?.split("\n").slice(0, 3).join(" | "),
+        // Include any additional properties
+        ...(error as Record<string, unknown>)
+      });
+    }
+    
     return NextResponse.json(
-      { error: "Failed to fetch resources", details: errorMessage },
+      { error: "Failed to fetch resources", details: errorDetails },
       { status: 500 }
     );
   }
@@ -82,11 +94,19 @@ export async function POST(request: NextRequest) {
       .returning();
 
     return NextResponse.json(newResource[0], { status: 201 });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error creating resource:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
+    let errorDetails = "Unknown error";
+    if (error instanceof Error) {
+      errorDetails = JSON.stringify({
+        message: error.message,
+        name: error.name,
+      });
+    }
+    
     return NextResponse.json(
-      { error: "Failed to create resource", details: errorMessage },
+      { error: "Failed to create resource", details: errorDetails },
       { status: 500 }
     );
   }
