@@ -1,8 +1,8 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, serial, timestamp } from "drizzle-orm/pg-core";
 
 // Resources table - for storing learning materials
-export const resources = sqliteTable("resources", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const resources = pgTable("resources", {
+  id: serial("id").primaryKey(),
   url: text("url").notNull(),
   title: text("title").notNull(),
   description: text("description"),
@@ -15,14 +15,14 @@ export const resources = sqliteTable("resources", {
   priority: integer("priority").notNull().default(0),
   notes: text("notes"),
   favicon: text("favicon"),
-  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
-  completedAt: integer("completed_at", { mode: "timestamp" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
 });
 
 // Content Ideas table - for tracking content creation ideas
-export const contentIdeas = sqliteTable("content_ideas", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const contentIdeas = pgTable("content_ideas", {
+  id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
   type: text("type", {
@@ -33,8 +33,8 @@ export const contentIdeas = sqliteTable("content_ideas", {
   }).notNull().default("idea"),
   linkedResourceIds: text("linked_resource_ids"), // JSON array of resource IDs
   notes: text("notes"),
-  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Types
