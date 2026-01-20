@@ -2,16 +2,30 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
-// Supabase connection string from environment variable
-const connectionString = process.env.DATABASE_URL!;
+// Lazy initialization - only connect when db is actually used
+// This prevents build-time errors when DATABASE_URL isn't available
+let _db: ReturnType<typeof drizzle> | null = null;
 
-if (!connectionString) {
-  throw new Error("DATABASE_URL environment variable is not set");
+function getConnectionString(): string {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error(
+      "DATABASE_URL environment variable is not set. " +
+      "Please set it in your .env.local file or Netlify environment variables."
+    );
+  }
+  return connectionString;
 }
 
-// Create postgres client - use connection pooling settings for serverless
-const client = postgres(connectionString, {
-  prepare: false, // Disables prepared statements (required for Supabase Transaction Pooler)
+export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+  get(_, prop) {
+    if (!_db) {
+      const connectionString = getConnectionString();
+      const client = postgres(connectionString, {
+        prepare: false, // Required for Supabase Transaction Pooler
+      });
+      _db = drizzle(client, { schema });
+    }
+    return (_db as any)[prop];
+  },
 });
-
-export const db = drizzle(client, { schema });
