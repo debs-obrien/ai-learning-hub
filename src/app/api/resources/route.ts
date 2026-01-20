@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { resources } from "@/lib/db/schema";
-import { eq, desc, asc } from "drizzle-orm";
+import { desc, asc } from "drizzle-orm";
 import { isAuthenticated } from "@/lib/auth";
 
 // GET all resources
@@ -14,8 +14,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const category = searchParams.get("category");
-
-    let query = db.select().from(resources);
 
     // We'll filter in memory for simplicity with drizzle
     const allResources = await db
@@ -36,8 +34,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(filtered);
   } catch (error) {
     console.error("Error fetching resources:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to fetch resources" },
+      { error: "Failed to fetch resources", details: errorMessage },
       { status: 500 }
     );
   }
@@ -85,8 +84,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newResource[0], { status: 201 });
   } catch (error) {
     console.error("Error creating resource:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to create resource" },
+      { error: "Failed to create resource", details: errorMessage },
       { status: 500 }
     );
   }
