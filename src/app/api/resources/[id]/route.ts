@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { resources } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { supabase } from "@/lib/db";
+import { toResource } from "@/lib/db/types";
 import { isAuthenticated } from "@/lib/auth";
 
 // GET single resource
@@ -15,17 +14,20 @@ export async function GET(
 
   try {
     const { id } = await params;
-    const resource = await db
-      .select()
-      .from(resources)
-      .where(eq(resources.id, parseInt(id)))
-      .limit(1);
+    const { data: resource, error } = await supabase
+      .from("resources")
+      .select("*")
+      .eq("id", parseInt(id))
+      .single();
 
-    if (resource.length === 0) {
-      return NextResponse.json({ error: "Resource not found" }, { status: 404 });
+    if (error) {
+      if (error.code === "PGRST116") {
+        return NextResponse.json({ error: "Resource not found" }, { status: 404 });
+      }
+      throw error;
     }
 
-    return NextResponse.json(resource[0]);
+    return NextResponse.json(toResource(resource));
   } catch (error) {
     console.error("Error fetching resource:", error);
     return NextResponse.json(
@@ -50,7 +52,7 @@ export async function PATCH(
     const { title, description, category, status, priority, notes } = body;
 
     const updateData: Record<string, unknown> = {
-      updatedAt: new Date(),
+      updated_at: new Date().toISOString(),
     };
 
     if (title !== undefined) updateData.title = title;
@@ -59,23 +61,27 @@ export async function PATCH(
     if (status !== undefined) {
       updateData.status = status;
       if (status === "completed") {
-        updateData.completedAt = new Date();
+        updateData.completed_at = new Date().toISOString();
       }
     }
     if (priority !== undefined) updateData.priority = priority;
     if (notes !== undefined) updateData.notes = notes;
 
-    const updated = await db
-      .update(resources)
-      .set(updateData)
-      .where(eq(resources.id, parseInt(id)))
-      .returning();
+    const { data: updated, error } = await supabase
+      .from("resources")
+      .update(updateData)
+      .eq("id", parseInt(id))
+      .select()
+      .single();
 
-    if (updated.length === 0) {
-      return NextResponse.json({ error: "Resource not found" }, { status: 404 });
+    if (error) {
+      if (error.code === "PGRST116") {
+        return NextResponse.json({ error: "Resource not found" }, { status: 404 });
+      }
+      throw error;
     }
 
-    return NextResponse.json(updated[0]);
+    return NextResponse.json(toResource(updated));
   } catch (error) {
     console.error("Error updating resource:", error);
     return NextResponse.json(
@@ -96,13 +102,13 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const deleted = await db
-      .delete(resources)
-      .where(eq(resources.id, parseInt(id)))
-      .returning();
+    const { error } = await supabase
+      .from("resources")
+      .delete()
+      .eq("id", parseInt(id));
 
-    if (deleted.length === 0) {
-      return NextResponse.json({ error: "Resource not found" }, { status: 404 });
+    if (error) {
+      throw error;
     }
 
     return NextResponse.json({ success: true });

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { resources } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { supabase } from "@/lib/db";
 import { isAuthenticated } from "@/lib/auth";
 
 // POST reorder resources
@@ -22,12 +20,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Update priority for each resource based on its position in the array
-    for (let i = 0; i < orderedIds.length; i++) {
-      await db
-        .update(resources)
-        .set({ priority: i, updatedAt: new Date() })
-        .where(eq(resources.id, orderedIds[i]));
-    }
+    const updates = orderedIds.map((id: number, index: number) =>
+      supabase
+        .from("resources")
+        .update({ priority: index, updated_at: new Date().toISOString() })
+        .eq("id", id)
+    );
+
+    await Promise.all(updates);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { contentIdeas } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { supabase } from "@/lib/db";
+import { toContentIdea } from "@/lib/db/types";
 import { isAuthenticated } from "@/lib/auth";
 
 // PATCH update idea
@@ -19,7 +18,7 @@ export async function PATCH(
     const { title, description, type, status, linkedResourceIds, notes } = body;
 
     const updateData: Record<string, unknown> = {
-      updatedAt: new Date(),
+      updated_at: new Date().toISOString(),
     };
 
     if (title !== undefined) updateData.title = title;
@@ -27,21 +26,25 @@ export async function PATCH(
     if (type !== undefined) updateData.type = type;
     if (status !== undefined) updateData.status = status;
     if (linkedResourceIds !== undefined) {
-      updateData.linkedResourceIds = JSON.stringify(linkedResourceIds);
+      updateData.linked_resource_ids = JSON.stringify(linkedResourceIds);
     }
     if (notes !== undefined) updateData.notes = notes;
 
-    const updated = await db
-      .update(contentIdeas)
-      .set(updateData)
-      .where(eq(contentIdeas.id, parseInt(id)))
-      .returning();
+    const { data: updated, error } = await supabase
+      .from("content_ideas")
+      .update(updateData)
+      .eq("id", parseInt(id))
+      .select()
+      .single();
 
-    if (updated.length === 0) {
-      return NextResponse.json({ error: "Idea not found" }, { status: 404 });
+    if (error) {
+      if (error.code === "PGRST116") {
+        return NextResponse.json({ error: "Idea not found" }, { status: 404 });
+      }
+      throw error;
     }
 
-    return NextResponse.json(updated[0]);
+    return NextResponse.json(toContentIdea(updated));
   } catch (error) {
     console.error("Error updating idea:", error);
     return NextResponse.json(
@@ -62,13 +65,13 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const deleted = await db
-      .delete(contentIdeas)
-      .where(eq(contentIdeas.id, parseInt(id)))
-      .returning();
+    const { error } = await supabase
+      .from("content_ideas")
+      .delete()
+      .eq("id", parseInt(id));
 
-    if (deleted.length === 0) {
-      return NextResponse.json({ error: "Idea not found" }, { status: 404 });
+    if (error) {
+      throw error;
     }
 
     return NextResponse.json({ success: true });

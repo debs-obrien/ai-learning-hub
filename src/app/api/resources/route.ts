@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { resources } from "@/lib/db/schema";
-import { desc, asc } from "drizzle-orm";
+import { supabase } from "@/lib/db";
+import { toResource } from "@/lib/db/types";
 import { isAuthenticated } from "@/lib/auth";
 
 // GET all resources
@@ -15,40 +14,37 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const category = searchParams.get("category");
 
-    // We'll filter in memory for simplicity with drizzle
-    const allResources = await db
-      .select()
-      .from(resources)
-      .orderBy(asc(resources.priority), desc(resources.createdAt));
-
-    let filtered = allResources;
+    let query = supabase
+      .from("resources")
+      .select("*")
+      .order("priority", { ascending: true })
+      .order("created_at", { ascending: false });
 
     if (status) {
-      filtered = filtered.filter((r) => r.status === status);
+      query = query.eq("status", status);
     }
 
     if (category) {
-      filtered = filtered.filter((r) => r.category === category);
+      query = query.eq("category", category);
     }
 
-    return NextResponse.json(filtered);
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    // Convert snake_case to camelCase for frontend
+    const resources = (data || []).map(toResource);
+
+    return NextResponse.json(resources);
   } catch (error: unknown) {
     console.error("Error fetching resources:", error);
-    
-    // Get detailed error info
-    let errorDetails = "Unknown error";
-    if (error instanceof Error) {
-      errorDetails = JSON.stringify({
-        message: error.message,
-        name: error.name,
-        stack: error.stack?.split("\n").slice(0, 3).join(" | "),
-        // Include any additional properties
-        ...(error as Record<string, unknown>)
-      });
-    }
-    
+
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
     return NextResponse.json(
-      { error: "Failed to fetch resources", details: errorDetails },
+      { error: "Failed to fetch resources", details: errorMessage },
       { status: 500 }
     );
   }
@@ -72,15 +68,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the max priority to add new item at the end
-    const existingResources = await db.select().from(resources);
-    const maxPriority = existingResources.reduce(
-      (max, r) => Math.max(max, r.priority),
-      -1
-    );
+    const { data: existingResources } = await supabase
+      .from("resources")
+      .select("priority")
+      .order("priority", { ascending: false })
+      .limit(1);
 
-    const newResource = await db
-      .insert(resources)
-      .values({
+    const maxPriority = existingResources?.[0]?.priority ?? -1;
+
+    const { data: newResource, error } = await supabase
+      .from("resources")
+      .insert({
         url,
         title,
         description: description || null,
@@ -88,25 +86,22 @@ export async function POST(request: NextRequest) {
         favicon: favicon || null,
         priority: maxPriority + 1,
         status: "to_learn",
-        createdAt: new Date(),
-        updatedAt: new Date(),
       })
-      .returning();
+      .select()
+      .single();
 
-    return NextResponse.json(newResource[0], { status: 201 });
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json(toResource(newResource), { status: 201 });
   } catch (error: unknown) {
     console.error("Error creating resource:", error);
-    
-    let errorDetails = "Unknown error";
-    if (error instanceof Error) {
-      errorDetails = JSON.stringify({
-        message: error.message,
-        name: error.name,
-      });
-    }
-    
+
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
     return NextResponse.json(
-      { error: "Failed to create resource", details: errorDetails },
+      { error: "Failed to create resource", details: errorMessage },
       { status: 500 }
     );
   }
