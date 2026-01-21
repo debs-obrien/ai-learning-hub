@@ -1,35 +1,16 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import * as schema from "./schema";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-// Lazy initialization - only connect when db is actually used
-// This prevents build-time errors when DATABASE_URL isn't available
-let _db: ReturnType<typeof drizzle> | null = null;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-function getConnectionString(): string {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error(
-      "DATABASE_URL environment variable is not set. " +
-      "Please set it in your .env.local file or Netlify environment variables."
-    );
-  }
-  return connectionString;
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error(
+    "Missing Supabase environment variables. " +
+    "Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in your .env.local file."
+  );
 }
 
-export const db = new Proxy({} as ReturnType<typeof drizzle>, {
-  get(_, prop) {
-    if (!_db) {
-      const connectionString = getConnectionString();
-      const client = postgres(connectionString, {
-        prepare: false, // Required for Supabase Transaction Pooler
-        ssl: { rejectUnauthorized: false }, // Accept Supabase SSL cert
-        max: 1, // Limit connections for serverless
-        idle_timeout: 20,
-        connect_timeout: 10,
-      });
-      _db = drizzle(client, { schema });
-    }
-    return (_db as any)[prop];
-  },
-});
+// Create a single instance of the Supabase client
+// Using 'any' for the generic type to avoid strict typing issues with insert/update
+// The actual data structure is validated by the database constraints
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);

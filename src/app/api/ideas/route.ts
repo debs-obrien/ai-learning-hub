@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { contentIdeas } from "@/lib/db/schema";
-import { desc } from "drizzle-orm";
+import { supabase } from "@/lib/db";
+import { toContentIdea } from "@/lib/db/types";
 import { isAuthenticated } from "@/lib/auth";
 
 // GET all content ideas
@@ -11,10 +10,17 @@ export async function GET() {
   }
 
   try {
-    const ideas = await db
-      .select()
-      .from(contentIdeas)
-      .orderBy(desc(contentIdeas.createdAt));
+    const { data, error } = await supabase
+      .from("content_ideas")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    // Convert snake_case to camelCase for frontend
+    const ideas = (data || []).map(toContentIdea);
 
     return NextResponse.json(ideas);
   } catch (error) {
@@ -43,21 +49,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newIdea = await db
-      .insert(contentIdeas)
-      .values({
+    const { data: newIdea, error } = await supabase
+      .from("content_ideas")
+      .insert({
         title,
         description: description || null,
         type: type || "blog_post",
         status: "idea",
-        linkedResourceIds: linkedResourceIds ? JSON.stringify(linkedResourceIds) : null,
+        linked_resource_ids: linkedResourceIds ? JSON.stringify(linkedResourceIds) : null,
         notes: notes || null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       })
-      .returning();
+      .select()
+      .single();
 
-    return NextResponse.json(newIdea[0], { status: 201 });
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json(toContentIdea(newIdea), { status: 201 });
   } catch (error) {
     console.error("Error creating idea:", error);
     return NextResponse.json(

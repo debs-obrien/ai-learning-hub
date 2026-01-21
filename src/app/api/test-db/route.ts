@@ -1,49 +1,89 @@
-import { NextRequest, NextResponse } from "next/server";
-import postgres from "postgres";
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-export async function GET(request: NextRequest) {
-  const connectionString = process.env.DATABASE_URL;
-  
-  if (!connectionString) {
-    return NextResponse.json({ 
-      error: "DATABASE_URL not set",
-      env_keys: Object.keys(process.env).filter(k => k.includes('DATABASE') || k.includes('SUPA'))
+export async function GET() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json({
+      error: "Missing environment variables",
+      env_keys: Object.keys(process.env).filter(
+        (k) => k.includes("SUPABASE") || k.includes("DATABASE")
+      ),
     });
   }
-  
-  // Mask the password for display
-  const maskedUrl = connectionString.replace(/:([^@]+)@/, ':****@');
-  
+
   try {
-    const sql = postgres(connectionString, {
-      prepare: false,
-      ssl: { rejectUnauthorized: false },
-      max: 1,
-      connect_timeout: 10,
-    });
-    
-    // Try a simple query
-    const result = await sql`SELECT 1 as test`;
-    await sql.end();
-    
-    return NextResponse.json({ 
-      success: true, 
-      message: "Connection works!",
-      maskedUrl,
-      testResult: result
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Test SELECT on resources
+    const { data: resources, error: selectError } = await supabase
+      .from("resources")
+      .select("*")
+      .limit(5);
+
+    // Test INSERT on resources
+    const { data: insertedResource, error: insertError } = await supabase
+      .from("resources")
+      .insert({
+        url: "https://test.com",
+        title: "Test Resource - DELETE ME",
+        description: "This is a test",
+        category: "blog",
+        status: "to_learn",
+        priority: 999,
+      })
+      .select()
+      .single();
+
+    // Clean up - delete the test resource if it was created
+    let deleteResult = null;
+    if (insertedResource?.id) {
+      const { error: deleteError } = await supabase
+        .from("resources")
+        .delete()
+        .eq("id", insertedResource.id);
+      deleteResult = { deleted: !deleteError, error: deleteError?.message };
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Supabase connection test",
+      supabaseUrl,
+      tests: {
+        select: {
+          success: !selectError,
+          count: resources?.length || 0,
+          error: selectError ? {
+            message: selectError.message,
+            code: selectError.code,
+            hint: selectError.hint,
+          } : null,
+        },
+        insert: {
+          success: !insertError,
+          data: insertedResource,
+          error: insertError ? {
+            message: insertError.message,
+            code: insertError.code,
+            hint: insertError.hint,
+          } : null,
+        },
+        cleanup: deleteResult,
+      },
     });
   } catch (error: unknown) {
-    const err = error as Error & { code?: string; errno?: number; syscall?: string };
-    return NextResponse.json({ 
-      error: "Connection failed",
-      maskedUrl,
-      details: {
-        message: err.message,
-        name: err.name,
-        code: err.code,
-        errno: err.errno,
-        syscall: err.syscall,
-      }
-    }, { status: 500 });
+    const err = error as Error;
+    return NextResponse.json(
+      {
+        error: "Connection failed",
+        details: {
+          message: err.message,
+          name: err.name,
+        },
+      },
+      { status: 500 }
+    );
   }
 }
