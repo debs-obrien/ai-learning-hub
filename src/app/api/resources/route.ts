@@ -41,16 +41,10 @@ export async function GET(request: NextRequest) {
   } catch (error: unknown) {
     console.error("Error fetching resources:", error);
 
-    let errorDetails = "Unknown error";
-    if (error instanceof Error) {
-      errorDetails = JSON.stringify({
-        message: error.message,
-        name: error.name,
-      });
-    }
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
     return NextResponse.json(
-      { error: "Failed to fetch resources", details: errorDetails },
+      { error: "Failed to fetch resources", details: errorMessage },
       { status: 500 }
     );
   }
@@ -104,16 +98,10 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error("Error creating resource:", error);
 
-    let errorDetails = "Unknown error";
-    if (error instanceof Error) {
-      errorDetails = JSON.stringify({
-        message: error.message,
-        name: error.name,
-      });
-    }
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
     return NextResponse.json(
-      { error: "Failed to create resource", details: errorDetails },
+      { error: "Failed to create resource", details: errorMessage },
       { status: 500 }
     );
   }
