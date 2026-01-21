@@ -73,6 +73,12 @@ export function ResourceCard({
     navigator.clipboard.writeText(resource.url);
   };
 
+  const openResource = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.open(resource.url, "_blank");
+  };
+
   return (
     <Card
       ref={setNodeRef}
@@ -116,12 +122,27 @@ export function ResourceCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-sm leading-tight line-clamp-2 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
-                  {resource.title}
-                </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1">
+                <a
+                  href={resource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={openResource}
+                  className="block group/link"
+                >
+                  <h3 className="font-medium text-sm leading-tight line-clamp-2 text-gray-900 dark:text-gray-100 group-hover/link:text-violet-600 dark:group-hover/link:text-violet-400 transition-colors cursor-pointer">
+                    {resource.title}
+                  </h3>
+                </a>
+                <a
+                  href={resource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={openResource}
+                  className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                >
                   <span className="truncate">{hostname}</span>
-                </p>
+                  <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </a>
               </div>
 
               {/* Actions Dropdown */}
