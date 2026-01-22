@@ -20,8 +20,10 @@ setup('authenticate', async ({ page }) => {
     throw new Error('APP_PASSWORD environment variable is not set. Check your .env.test.local file.');
   }
   
-  // Fill in password and submit
-  await page.getByPlaceholder('Enter your password').fill(password);
+  // Fill in password and submit (wrapped in test.step to mask password in reports)
+  await setup.step('Enter login credentials', async () => {
+    await page.getByPlaceholder('Enter your password').fill(password);
+  });
   await page.getByRole('button', { name: 'Sign In' }).click();
   
   // Check for authentication errors
