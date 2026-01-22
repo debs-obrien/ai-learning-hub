@@ -1,0 +1,13 @@
+# Ralph Progress Log
+Started: Initial setup
+---
+
+## Codebase Patterns
+- Use `cn()` from `@/lib/utils` for conditional class merging
+- All API routes are in `src/app/api/` with REST conventions
+- Use shadcn/ui components from `src/components/ui/`
+- Use `@/` alias for src imports
+- Components: Functional components with React hooks
+- Naming: PascalCase for components, camelCase for functions/variables
+
+---
