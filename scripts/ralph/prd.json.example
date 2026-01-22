@@ -1,0 +1,35 @@
+{
+  "project": "AI Learning Hub",
+  "branchName": "ralph/feature-name",
+  "description": "Brief description of the feature being built",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "First task title",
+      "description": "As a user, I want to...",
+      "acceptanceCriteria": [
+        "Criteria 1",
+        "Criteria 2",
+        "npm run build passes",
+        "npm run lint passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Second task with UI",
+      "description": "As a user, I want to see...",
+      "acceptanceCriteria": [
+        "UI requirement 1",
+        "UI requirement 2",
+        "npm run build passes",
+        "Verify in browser using Playwright MCP"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
