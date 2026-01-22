@@ -1,7 +1,7 @@
 import { FullConfig } from '@playwright/test';
 import { seedTestData } from './helpers/database';
 
-async function globalSetup(config: FullConfig) {
+async function globalSetup(_config: FullConfig) {
   console.log('\n🚀 Global Setup: Starting...');
   
   try {

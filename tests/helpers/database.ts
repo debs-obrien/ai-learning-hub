@@ -89,8 +89,10 @@ export async function seedTestData() {
     throw ideaError;
   }
   
-  console.log(`✅ Seeded ${resources?.length || 0} test resources and ${ideas?.length || 0} test ideas`);
-  return { resources, ideas };
+  const safeResources = resources ?? [];
+  const safeIdeas = ideas ?? [];
+  console.log(`✅ Seeded ${safeResources.length} test resources and ${safeIdeas.length} test ideas`);
+  return { resources: safeResources, ideas: safeIdeas };
 }
 
 /**
@@ -99,11 +101,11 @@ export async function seedTestData() {
 export async function cleanupTestData() {
   console.log('🧹 Cleaning up test data...');
   
-  // Delete all resources
+  // Delete all resources (use not('id', 'is', null) to match all rows)
   const { error: resourceError, count: resourceCount } = await testSupabase
     .from('resources')
     .delete({ count: 'exact' })
-    .gte('id', 0);
+    .not('id', 'is', null);
     
   if (resourceError) {
     console.error('❌ Error cleaning resources:', resourceError);
@@ -111,11 +113,11 @@ export async function cleanupTestData() {
     console.log(`   Deleted ${resourceCount || 0} resources`);
   }
   
-  // Delete all content ideas
+  // Delete all content ideas (use not('id', 'is', null) to match all rows)
   const { error: ideaError, count: ideaCount } = await testSupabase
     .from('content_ideas')
     .delete({ count: 'exact' })
-    .gte('id', 0);
+    .not('id', 'is', null);
     
   if (ideaError) {
     console.error('❌ Error cleaning ideas:', ideaError);

@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get description
-    let description = getMetaContent("description");
+    const description = getMetaContent("description");
 
     // Get favicon
     let favicon = null;

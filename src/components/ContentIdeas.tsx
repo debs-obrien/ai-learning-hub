@@ -22,7 +22,6 @@ import {
   Lightbulb,
   Plus,
   MoreVertical,
-  Pencil,
   Trash2,
   Check,
   ArrowRight,

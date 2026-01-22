@@ -1,20 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Load test environment variables
-dotenv.config({ path: path.resolve(process.cwd(), '.env.test.local') });
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Missing Supabase environment variables.');
-  console.error('   Make sure .env.test.local exists with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Reuse the Supabase client from test helpers to avoid duplication
+import { testSupabase as supabase } from '../tests/helpers/database';
 
 // Sample resources for testing and design
 const sampleResources = [
@@ -131,37 +116,65 @@ const sampleIdeas = [
 async function seedDatabase() {
   console.log('🌱 Seeding test database with sample data...\n');
   
-  // Clear existing data
+  let hasError = false;
+  let resourcesCount = 0;
+  let ideasCount = 0;
+
+  // Clear existing data (use not('id', 'is', null) to match all rows)
   console.log('🧹 Clearing existing data...');
-  await supabase.from('resources').delete().gte('id', 0);
-  await supabase.from('content_ideas').delete().gte('id', 0);
-  console.log('   ✅ Cleared existing data\n');
+  const { error: resourcesDeleteError } = await supabase.from('resources').delete().not('id', 'is', null);
+  if (resourcesDeleteError) {
+    console.error('   ❌ Error clearing resources:', resourcesDeleteError.message);
+    hasError = true;
+  }
+  const { error: ideasDeleteError } = await supabase.from('content_ideas').delete().not('id', 'is', null);
+  if (ideasDeleteError) {
+    console.error('   ❌ Error clearing content ideas:', ideasDeleteError.message);
+    hasError = true;
+  }
+  if (!resourcesDeleteError && !ideasDeleteError) {
+    console.log('   ✅ Cleared existing data\n');
+  } else {
+    console.log('');
+  }
   
   // Insert sample resources
   console.log('📚 Inserting sample resources...');
   const { data: resources, error: resourcesError } = await supabase.from('resources').insert(sampleResources).select();
   if (resourcesError) {
-    console.error('   ❌ Error:', resourcesError.message);
+    console.error('   ❌ Error inserting resources:', resourcesError.message);
+    hasError = true;
   } else {
-    console.log(`   ✅ Inserted ${resources?.length || 0} resources`);
+    resourcesCount = resources?.length || 0;
+    console.log(`   ✅ Inserted ${resourcesCount} resources`);
   }
   
   // Insert sample ideas
   console.log('💡 Inserting sample content ideas...');
   const { data: ideas, error: ideasError } = await supabase.from('content_ideas').insert(sampleIdeas).select();
   if (ideasError) {
-    console.error('   ❌ Error:', ideasError.message);
+    console.error('   ❌ Error inserting content ideas:', ideasError.message);
+    hasError = true;
   } else {
-    console.log(`   ✅ Inserted ${ideas?.length || 0} ideas`);
+    ideasCount = ideas?.length || 0;
+    console.log(`   ✅ Inserted ${ideasCount} ideas`);
+  }
+
+  if (hasError) {
+    console.error('\n❌ One or more errors occurred while seeding the database.');
+    process.exit(1);
   }
   
   console.log('\n🎉 Database seeded successfully!');
   console.log('\n📊 Summary:');
-  console.log(`   Resources: ${resources?.length || 0}`);
+  console.log(`   Resources: ${resourcesCount}`);
   console.log(`     - To Learn: ${sampleResources.filter(r => r.status === 'to_learn').length}`);
   console.log(`     - Learning: ${sampleResources.filter(r => r.status === 'learning').length}`);
   console.log(`     - Completed: ${sampleResources.filter(r => r.status === 'completed').length}`);
-  console.log(`   Content Ideas: ${ideas?.length || 0}`);
+  console.log(`   Content Ideas: ${ideasCount}`);
 }
 
-seedDatabase().catch(console.error);
+seedDatabase().catch((error) => {
+  console.error('❌ Unexpected error while seeding the database:', error);
+  process.exit(1);
+});

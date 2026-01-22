@@ -15,10 +15,12 @@ export function middleware(request: NextRequest) {
   }
   
   // Allow static files and Next.js internals
+  // Use a regex to match common static file extensions instead of pathname.includes('.')
+  // to avoid incorrectly allowing paths like /user.settings
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
-    pathname.includes('.')
+    /\.(ico|png|jpg|jpeg|gif|svg|webp|css|js|woff|woff2|ttf|eot)$/i.test(pathname)
   ) {
     return NextResponse.next();
   }

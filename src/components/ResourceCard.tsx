@@ -105,6 +105,7 @@ export function ResourceCard({
           {/* Favicon */}
           <div className="flex-shrink-0 mt-1">
             {resource.favicon ? (
+              // eslint-disable-next-line @next/next/no-img-element -- Favicons are from dynamic external domains, small images don't benefit from optimization
               <img
                 src={resource.favicon}
                 alt=""
