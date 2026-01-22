@@ -53,3 +53,24 @@ VALUES (
 - Spotify episodes can be scraped without login (accept cookies first)
 - Block engineering blog and most tech blogs work well with Playwright
 - Always close browser after scraping: `playwright__browser_close`
+
+## GitHub Operations
+
+### Pull Requests
+**IMPORTANT**: Use the GitHub MCP server for creating and managing pull requests, NOT the `gh` CLI.
+
+Use the `github` MCP tools for:
+- `create_pull_request` - Create new PRs
+- `update_pull_request` - Update existing PRs
+- `list_pull_requests` - List PRs in a repo
+- `pull_request_read` - Get PR details, diff, status, comments
+- `merge_pull_request` - Merge PRs
+- `add_issue_comment` - Add comments to PRs (pass PR number as issue_number)
+
+### Other GitHub Operations
+- `create_branch` - Create new branches
+- `list_branches` - List repo branches
+- `get_file_contents` - Read files from GitHub
+- `push_files` - Push multiple files in a single commit
+- `search_code` - Search code across repositories
+- `list_issues` / `issue_write` - Manage issues
