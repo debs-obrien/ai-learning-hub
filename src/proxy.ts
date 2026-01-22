@@ -6,7 +6,7 @@ const SESSION_COOKIE_NAME = 'ai-learning-hub-session';
 // Paths that don't require authentication
 const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/auth/logout'];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Allow public paths
