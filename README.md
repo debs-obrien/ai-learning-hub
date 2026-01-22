@@ -58,13 +58,70 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 Create a `.env.local` file:
 
 ```env
-# Leave empty for development (no password required)
-# Set a strong password for production
+# Supabase connection
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-key
+
+# App password for authentication
 APP_PASSWORD=your-secure-password
 
 # Session secret for cookie signing
 SESSION_SECRET=your-random-secret-key
 ```
+
+## 🧪 Testing
+
+This project uses Playwright for E2E testing with a separate test database.
+
+### Test Environment Setup
+
+1. Create a `.env.test.local` file with your **test database** credentials:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-test-supabase-url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-test-supabase-key
+APP_PASSWORD=your-test-password
+SESSION_SECRET=your-test-secret
+```
+
+2. Seed the test database with sample data:
+
+```bash
+npm run seed:test
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npx playwright test
+
+# Run tests in UI mode
+npx playwright test --ui
+
+# Run specific test file
+npx playwright test tests/seed.spec.ts
+```
+
+### Development with Test Data
+
+Run the app with the test database for design/development purposes:
+
+```bash
+npm run dev:test
+```
+
+This starts the app on port 3001 using the test database, so you can work with sample data without affecting production.
+
+### Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start dev server on port 3000 with production database |
+| `npm run dev:test` | Start dev server on port 3001 with test database |
+| `npm run seed:test` | Seed test database with sample resources and ideas |
+| `npm run build` | Build for production |
+| `npm run lint` | Run ESLint |
 
 ## 🌐 Deployment to Netlify
 
